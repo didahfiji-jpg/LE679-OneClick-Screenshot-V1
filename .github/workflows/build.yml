@@ -40,4 +40,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: LE679-OneClick-Screenshot-V1
-          path: |\n            dist/LE679-OneClick-Screenshot-V1.exe\n            dist/icon.png
+          path: |
+            dist/LE679-OneClick-Screenshot-V1.exe
+            dist/icon.png
