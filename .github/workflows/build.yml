@@ -1,0 +1,33 @@
+name: Windows EXE
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pillow pywin32 pyinstaller
+      - shell: python
+        run: |
+          from PIL import Image, ImageDraw, ImageFilter
+          im=Image.new("RGBA",(256,256))
+          g=ImageDraw.Draw(im)
+          g.ellipse((36,36,220,220),fill=(163,75,255,220))
+          im=im.filter(ImageFilter.GaussianBlur(14))
+          d=ImageDraw.Draw(im)
+          d.ellipse((44,44,212,212),fill="#29183f",outline="#bc80ff",width=5)
+          d.line([(82,102),(104,102),(113,89),(143,89),(152,102),(174,102),(174,162),(82,162),(82,102)],fill="white",width=5,joint="curve")
+          d.ellipse((109,113,147,151),outline="white",width=5)
+          im.save("icon.png")
+          im.save("icon.ico",sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])
+      - run: python -m py_compile app.py
+      - run: pyinstaller --noconfirm --onefile --windowed --name LE679-OneClick-Screenshot-V1 --icon icon.ico --add-data "icon.png;." app.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LE679-OneClick-Screenshot-V1
+          path: |
+            dist/*.exe
+            icon.png
+            icon.ico
