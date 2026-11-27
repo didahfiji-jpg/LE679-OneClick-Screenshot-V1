@@ -14,23 +14,20 @@ jobs:
           build-mode: manual
       - shell: powershell
         run: |
+          $ErrorActionPreference = 'Stop'
           Add-Type -AssemblyName System.Drawing
-          $b = New-Object Drawing.Bitmap 256,256
-          $g = [Drawing.Graphics]::FromImage($b)
-          $g.SmoothingMode = 'AntiAlias'
-          $g.FillEllipse([Drawing.Brushes]::DarkSlateBlue,8,8,240,240)
-          $g.DrawEllipse((New-Object Drawing.Pen ([Drawing.Color]::MediumPurple),6),8,8,240,240)
-          $p = New-Object Drawing.Pen ([Drawing.Color]::White),8
-          $g.DrawRectangle($p,65,95,126,78)
-          $g.DrawEllipse($p,103,109,50,50)
-          $icon = [Drawing.Icon]::FromHandle($b.GetHicon())
-          $s = [IO.File]::Create("$pwd\icon.ico")
-          $icon.Save($s)
-          $s.Close()
-          $g.Dispose()
-          $b.Dispose()
-          New-Item -ItemType Directory -Force dist
-          & "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:winexe /platform:x64 /win32icon:icon.ico /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /out:dist/LE679-OneClick-Screenshot-V1.exe Capture.cs
+          $bitmap = [Drawing.Bitmap]::FromFile("$pwd\\icon.png")
+          try {
+            $handle = $bitmap.GetHicon()
+            try {
+              $icon = [Drawing.Icon]::FromHandle($handle)
+              $stream = [IO.File]::Create("$pwd\\icon.ico")
+              try { $icon.Save($stream) } finally { $stream.Dispose(); $icon.Dispose() }
+            } finally { Add-Type -TypeDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool DestroyIcon(System.IntPtr handle);' -Name NativeIcon -Namespace LE679; [LE679.NativeIcon]::DestroyIcon($handle) | Out-Null }
+          } finally { $bitmap.Dispose() }
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item icon.png dist/icon.png
+          & "$env:WINDIR\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe" /nologo /target:winexe /platform:x64 /win32icon:icon.ico /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /out:dist/LE679-OneClick-Screenshot-V1.exe Capture.cs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: github/codeql-action/analyze@v3
       - shell: powershell
@@ -43,4 +40,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: LE679-OneClick-Screenshot-V1
-          path: dist/LE679-OneClick-Screenshot-V1.exe
+          path: |\n            dist/LE679-OneClick-Screenshot-V1.exe\n            dist/icon.png
