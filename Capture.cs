@@ -9,11 +9,13 @@ class Capture : Form {
 [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
 [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h,int a,out RECT r,int s);
 [StructLayout(LayoutKind.Sequential)] struct RECT { public int L,T,R,B; }
+Bitmap hdIcon;
 Point start,origin; bool dragging; IntPtr target;
 protected override bool ShowWithoutActivation {get{return true;}}
 protected override CreateParams CreateParams {get{var p=base.CreateParams;p.ExStyle|=0x08000000|0x80;return p;}}
 Capture(){
 Text="LE679 OneClick Screenshot V1"; FormBorderStyle=FormBorderStyle.None; TopMost=true; ShowInTaskbar=false; Size=new Size(80,80); BackColor=Color.FromArgb(41,24,63); StartPosition=FormStartPosition.Manual; Location=new Point(40,200);
+hdIcon=new Bitmap(256,256,PixelFormat.Format32bppArgb);hdIcon.SetResolution(300,300);using(var g=Graphics.FromImage(hdIcon)){g.Clear(Color.Transparent);DrawIcon(g,256);}DoubleBuffered=true;
 var region=new System.Drawing.Drawing2D.GraphicsPath();region.AddEllipse(0,0,79,79);Region=new Region(region);
 var menu=new ContextMenuStrip();menu.Items.Add("Exit",null,(s,e)=>Close());ContextMenuStrip=menu;
 MouseDown+=(s,e)=>{if(e.Button!=MouseButtons.Left)return;start=Cursor.Position;origin=Location;target=GetForegroundWindow();dragging=false;};
@@ -29,7 +31,8 @@ public FlashWindow(){FormBorderStyle=FormBorderStyle.None;StartPosition=FormStar
 protected override bool ShowWithoutActivation{get{return true;}}
 protected override CreateParams CreateParams{get{var p=base.CreateParams;p.ExStyle|=0x08000000|0x80|0x20;return p;}}
 }
-protected override void OnPaint(PaintEventArgs e){DrawIcon(e.Graphics,80);}
+protected override void OnPaint(PaintEventArgs e){var g=e.Graphics;g.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;g.PixelOffsetMode=System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;g.DrawImage(hdIcon,new Rectangle(0,0,ClientSize.Width,ClientSize.Height),0,0,256,256,GraphicsUnit.Pixel);}
+protected override void Dispose(bool disposing){if(disposing && hdIcon!=null){hdIcon.Dispose();hdIcon=null;}base.Dispose(disposing);}
 static void DrawIcon(Graphics g,int size){
 g.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;g.ScaleTransform(size/80f,size/80f);
 using(var brush=new System.Drawing.Drawing2D.LinearGradientBrush(new Rectangle(1,1,78,78),Color.FromArgb(151,48,223),Color.FromArgb(35,5,65),90f))g.FillEllipse(brush,1,1,78,78);
