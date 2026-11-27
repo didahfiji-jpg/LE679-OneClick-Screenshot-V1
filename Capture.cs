@@ -15,7 +15,7 @@ protected override bool ShowWithoutActivation {get{return true;}}
 protected override CreateParams CreateParams {get{var p=base.CreateParams;p.ExStyle|=0x08000000|0x80;return p;}}
 Capture(){
 Text="LE679 OneClick Screenshot V1"; FormBorderStyle=FormBorderStyle.None; TopMost=true; ShowInTaskbar=false; Size=new Size(80,80); BackColor=Color.FromArgb(41,24,63); StartPosition=FormStartPosition.Manual; Location=new Point(40,200);
-hdIcon=new Bitmap(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"icon.png"));DoubleBuffered=true;
+using(var stream=typeof(Capture).Assembly.GetManifestResourceStream("LE679.Icon.png")){if(stream==null)throw new InvalidOperationException("Embedded icon missing");using(var original=new Bitmap(stream)){hdIcon=new Bitmap(original);}}DoubleBuffered=true;
 SetTransparentIconShape();
 var menu=new ContextMenuStrip();menu.Items.Add("Exit",null,(s,e)=>Close());ContextMenuStrip=menu;
 MouseDown+=(s,e)=>{if(e.Button!=MouseButtons.Left)return;start=Cursor.Position;origin=Location;target=GetForegroundWindow();dragging=false;};
