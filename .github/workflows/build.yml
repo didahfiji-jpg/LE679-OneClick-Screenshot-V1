@@ -23,12 +23,15 @@ jobs:
               $icon = [Drawing.Icon]::FromHandle($handle)
               $stream = [IO.File]::Create("$pwd\\icon.ico")
               try { $icon.Save($stream) } finally { $stream.Dispose(); $icon.Dispose() }
-            } finally { Add-Type -TypeDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool DestroyIcon(System.IntPtr handle);' -Name NativeIcon -Namespace LE679; [LE679.NativeIcon]::DestroyIcon($handle) | Out-Null }
+            } finally { Add-Type -MemberDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool DestroyIcon(System.IntPtr handle);' -Name NativeIcon -Namespace LE679; [LE679.NativeIcon]::DestroyIcon($handle) | Out-Null }
           } finally { $bitmap.Dispose() }
           New-Item -ItemType Directory -Force dist | Out-Null
-          Copy-Item icon.png dist/icon.png
-          & "$env:WINDIR\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe" /nologo /target:winexe /platform:x64 /win32icon:icon.ico /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /out:dist/LE679-OneClick-Screenshot-V1.exe Capture.cs
+          & "$env:WINDIR\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe" /nologo /target:winexe /platform:x64 /win32icon:icon.ico /resource:icon.png,LE679.Icon.png /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /out:dist/LE679-OneClick-Screenshot-V1.exe Capture.cs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $assembly = [Reflection.Assembly]::LoadFile("$pwd\dist\LE679-OneClick-Screenshot-V1.exe")
+          $embedded = $assembly.GetManifestResourceStream("LE679.Icon.png")
+          if ($null -eq $embedded) { throw "Embedded PNG missing" }
+          try { if ((Get-FileHash -InputStream $embedded).Hash -ne (Get-FileHash icon.png).Hash) { throw "Embedded PNG differs" } } finally { $embedded.Dispose() }
       - uses: github/codeql-action/analyze@v3
       - shell: powershell
         run: |
@@ -40,6 +43,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: LE679-OneClick-Screenshot-V1
-          path: |
-            dist/LE679-OneClick-Screenshot-V1.exe
-            dist/icon.png
+          path: dist/LE679-OneClick-Screenshot-V1.exe
